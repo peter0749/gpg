@@ -44,14 +44,13 @@ PointList PointList::rotatePointList(const Eigen::Matrix3d& rotation) const
 
 PointList PointList::cropByHandHeight(double height, int dim) const
 {
-  std::vector<int> indices(size());
-  int k = 0;
+  std::vector<int> indices;
+  indices.reserve(size());
   for (int i = 0; i < size(); i++)
   {
     if (points_(dim, i) > -1.0 * height && points_(dim, i) < height)
     {
-      indices[k] = i;
-      k++;
+      indices.push_back(i);
     }
   }
 

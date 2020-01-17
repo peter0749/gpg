@@ -116,7 +116,7 @@ public:
    * \param grasps the list of grasp candidates
    * \param plots_samples if samples are visualized
    */
-  std::vector<Grasp> reevaluateHypotheses(const CloudCamera& cloud_cam, const std::vector<Grasp>& grasps,
+  std::vector<int> reevaluateHypotheses(const CloudCamera& cloud_cam, std::vector<Grasp>& grasps,
     bool plot_samples = false) const;
 
   const Parameters& getParams () const

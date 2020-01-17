@@ -7,6 +7,7 @@
 #include <gpg/candidates_generator.h>
 #include <gpg/hand_search.h>
 #include <gpg/config_file.h>
+#include <gpg/plot.h>
 
 
 // function to read in a double array from a single line of a configuration file
@@ -104,6 +105,7 @@ int main(int argc, char* argv[])
   hand_search_params.num_threads_ = num_threads;
   hand_search_params.rotation_axis_ = rotation_axis;
   CandidatesGenerator candidates_generator(generator_params, hand_search_params);
+  HandSearch handsearch(hand_search_params);
 
   // Set the camera pose.
   Eigen::Matrix3Xd view_points(3,1);
@@ -130,6 +132,18 @@ int main(int argc, char* argv[])
 
   // Generate a list of grasp candidates.
   std::vector<Grasp> candidates = candidates_generator.generateGraspCandidates(cloud_cam);
+  std::vector<int> labels = handsearch.reevaluateHypotheses(cloud_cam, candidates);
+  std::vector<Grasp> good_grasps;
+  for (int i=0; i<labels.size(); ++i) {
+      if (labels[i]>0) good_grasps.push_back(candidates[i]);
+  }
+  std::cout << "Generated " << good_grasps.size() << " good grasps." << std::endl;
+  if (plot_grasps) {
+      Plot plotter;
+      Eigen::Matrix3Xd samples(3, good_grasps.size());
+      plotter.plotFingers3D(good_grasps, cloud_cam.getCloudOriginal(), "Good Grasps", hand_search_params.hand_outer_diameter_, 
+              hand_search_params.finger_width_, hand_search_params.hand_depth_, hand_search_params.hand_height_);
+  }
 
   return 0;
 }

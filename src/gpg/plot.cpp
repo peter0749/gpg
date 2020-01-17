@@ -450,7 +450,8 @@ void Plot::runViewer(boost::shared_ptr<pcl::visualization::PCLVisualizer>& viewe
   while (!viewer->wasStopped())
   {
     viewer->spinOnce(100);
-    boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+    // boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+    boost::this_thread::sleep_for(boost::chrono::microseconds(100000));
   }
 
   viewer->close();

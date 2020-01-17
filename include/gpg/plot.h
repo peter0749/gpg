@@ -35,6 +35,8 @@
 
 
 #include <pcl/visualization/pcl_visualizer.h>
+#include <boost/chrono.hpp>
+#include <boost/thread/thread.hpp>
 
 #include <gpg/cloud_camera.h>
 #include <gpg/grasp.h>

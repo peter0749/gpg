@@ -83,7 +83,7 @@ std::vector<GraspSet> HandSearch::searchHands(const CloudCamera& cloud_cam, bool
 }
 
 
-std::vector<Grasp> HandSearch::reevaluateHypotheses(const CloudCamera& cloud_cam, const std::vector<Grasp>& grasps,
+std::vector<int> HandSearch::reevaluateHypotheses(const CloudCamera& cloud_cam, std::vector<Grasp>& grasps,
   bool plot_samples) const
 {
   // create KdTree for neighborhood search
@@ -105,18 +105,18 @@ std::vector<Grasp> HandSearch::reevaluateHypotheses(const CloudCamera& cloud_cam
     plotter.plotSamples(samples, cloud);
   }
 
-  std::vector<int> nn_indices;
-  std::vector<float> nn_dists;
   Eigen::Matrix3Xd points = cloud->getMatrixXfMap().block(0, 0, 3, cloud->size()).cast<double>();
   PointList point_list(points, cloud_normals, camera_source, cloud_cam.getViewPoints());
-  PointList nn_points;
   std::vector<int> labels(grasps.size()); // -1: not feasible, 0: feasible, >0: see Antipodal class
 
 #ifdef _OPENMP // parallelization using OpenMP
-#pragma omp parallel for private(nn_indices, nn_dists, nn_points) num_threads(params_.num_threads_)
+#pragma omp parallel for num_threads(params_.num_threads_)
 #endif
   for (int i = 0; i < grasps.size(); i++)
   {
+    std::vector<int> nn_indices;
+    std::vector<float> nn_dists;
+    PointList nn_points;
     labels[i] = 0;
     pcl::PointXYZRGBA sample = eigenVectorToPcl(grasps[i].getSample());
 
@@ -139,10 +139,14 @@ std::vector<Grasp> HandSearch::reevaluateHypotheses(const CloudCamera& cloud_cam
       {
         // label the grasp
         labels[i] = labelHypothesis(nn_points_frame, finger_hand);
+        bool is_grasp = labels[i] == Antipodal::FULL_GRASP || labels[i] == Antipodal::HALF_GRASP;
+        grasps[i].setHalfAntipodal(is_grasp);
+        grasps[i].setFullAntipodal(labels[i] == Antipodal::FULL_GRASP);
       }
     }
   }
 
+  /*
   // remove empty list elements
   std::vector<Grasp> grasps_out;
   for (std::size_t i = 0; i < labels.size(); i++)
@@ -152,8 +156,9 @@ std::vector<Grasp> HandSearch::reevaluateHypotheses(const CloudCamera& cloud_cam
     grasps_out[grasps_out.size()-1].setHalfAntipodal(is_half_grasp);
     grasps_out[grasps_out.size()-1].setFullAntipodal(labels[i] == Antipodal::FULL_GRASP);
   }
+  */
 
-  return grasps_out;
+  return labels;
 }
 
 
@@ -178,23 +183,23 @@ std::vector<GraspSet> HandSearch::evaluateHands(const CloudCamera& cloud_cam, co
   // necessary b/c assignment in Eigen does not change vector size
   Eigen::VectorXd angles = angles_space.head(params_.num_orientations_);
 
-  std::vector<int> nn_indices;
-  std::vector<float> nn_dists;
   const PointCloudRGB::Ptr& cloud = cloud_cam.getCloudProcessed();
   Eigen::Matrix3Xd points = cloud->getMatrixXfMap().block(0, 0, 3, cloud->size()).cast<double>();
   std::vector<GraspSet> hand_set_list(frames.size());
   PointList point_list(points, cloud_cam.getNormals(), cloud_cam.getCameraSource(), cloud_cam.getViewPoints());
-  PointList nn_points;
   GraspSet::HandGeometry hand_geom(params_.finger_width_, params_.hand_outer_diameter_, params_.hand_depth_,
     params_.hand_height_, params_.init_bite_);
 //  GraspSet hand_set(hand_geom, angles, params_.rotation_axis_);
 
 #ifdef _OPENMP // parallelization using OpenMP
-#pragma omp parallel for private(nn_indices, nn_dists, nn_points) num_threads(params_.num_threads_)
+#pragma omp parallel for num_threads(params_.num_threads_)
 #endif
   for (std::size_t i = 0; i < frames.size(); i++)
   {
     pcl::PointXYZRGBA sample = eigenVectorToPcl(frames[i].getSample());
+    std::vector<int> nn_indices;
+    std::vector<float> nn_dists;
+    PointList nn_points;
 
     if (kdtree.radiusSearch(sample, nn_radius_, nn_indices, nn_dists) > 0)
     {
@@ -233,6 +238,7 @@ bool HandSearch::reevaluateHypothesis(const PointList& point_list, const Grasp& 
 {
   // Transform points into hand frame and crop them on <hand_height>.
   PointList point_list_frame = point_list.rotatePointList(hand.getFrame().transpose());
+  if (point_list_frame.size()==0) return false;
   point_list_cropped = point_list_frame.cropByHandHeight(params_.hand_height_);
 
   // Check that the finger placement is possible.
