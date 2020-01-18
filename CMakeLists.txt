@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 project(gpg)
-set(CMAKE_BUILD_TYPE Release)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -22,13 +21,28 @@ link_directories(${Boost_LIBRARY_DIRS})
 add_definitions(${Boost_DEFINITIONS})
 
 ## Set compiler optimization flags
-# set(CMAKE_CXX_FLAGS "-O3 -fopenmp -fPIC -Wno-deprecated -Wenum-compare -std=c++14")
-set(CMAKE_CXX_FLAGS "-O0 -g -fopenmp -fPIC -Wno-deprecated -Wenum-compare -std=c++14")
-# set(CMAKE_CXX_FLAGS "-O3 -fopenmp -march=native -mfpmath=sse -funroll-loops -fPIC -Wno-deprecated -Wenum-compare") # no improvement
-# set(CMAKE_CXX_FLAGS "-frename-registers -Ofast -march=native -fopenmp -fPIC -Wno-deprecated -Wenum-compare") # no improvement
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+set(CXX_COMPILE_FLAGS_M " -fopenmp -fPIC -Wno-deprecated -Wenum-compare")
+set(RELEASE_OPTI " -O2 -march=native")
+set(DEBUG_OPTI " -O0")
+
+string(REPLACE "-O3" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+string(REPLACE "-O3" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+string(REPLACE "-O3" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+
+string(REPLACE "-O2" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+string(REPLACE "-O2" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+string(REPLACE "-O2" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${CXX_COMPILE_FLAGS_M} ${DEBUG_OPTI}")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CXX_COMPILE_FLAGS_M} ${RELEASE_OPTI}")
+
 
 # Add the headers from the <include> directory
 include_directories(include)
+
 
 # Generate the shared library from the sources
 add_library(${PROJECT_NAME}_grasp_candidates_generator SHARED src/${PROJECT_NAME}/candidates_generator.cpp)
@@ -46,6 +60,7 @@ add_library(${PROJECT_NAME}_hand_search src/${PROJECT_NAME}/hand_search.cpp)
 add_library(${PROJECT_NAME}_local_frame src/${PROJECT_NAME}/local_frame.cpp)
 add_library(${PROJECT_NAME}_plot src/${PROJECT_NAME}/plot.cpp)
 add_library(${PROJECT_NAME}_point_list src/${PROJECT_NAME}/point_list.cpp)
+
 
 # This executable is for testing the shared library
 add_executable(${PROJECT_NAME}_generate_candidates src/generate_candidates.cpp)
@@ -121,7 +136,6 @@ target_link_libraries(${PROJECT_NAME}_point_list
                       ${PROJECT_NAME}_eigen_utils
                       ${Boost_LIBRARIES}
                       Boost::thread)
-
 
 # Rename executable.
 set_target_properties(${PROJECT_NAME}_generate_candidates

@@ -80,8 +80,10 @@ int main(int argc, char* argv[])
   std::cout << "rotation_axis: " << rotation_axis << "\n";
 
   bool plot_grasps = config_file.getValueOfKey<bool>("plot_grasps", true);
+  bool plot_candidates = config_file.getValueOfKey<bool>("plot_candidates", true);
   bool plot_normals = config_file.getValueOfKey<bool>("plot_normals", false);
   std::cout << "plot_grasps: " << plot_grasps << "\n";
+  std::cout << "plot_candidates: " << plot_candidates << "\n";
   std::cout << "plot_normals: " << plot_normals << "\n";
 
   // Create object to generate grasp candidates.
@@ -89,7 +91,7 @@ int main(int argc, char* argv[])
   generator_params.num_samples_ = num_samples;
   generator_params.num_threads_ = num_threads;
   generator_params.plot_normals_ = plot_normals;
-  generator_params.plot_grasps_ = plot_grasps;
+  generator_params.plot_grasps_ = plot_candidates;
   generator_params.remove_statistical_outliers_ = remove_outliers;
   generator_params.voxelize_ = voxelize;
   generator_params.workspace_ = workspace;

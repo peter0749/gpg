@@ -25,6 +25,7 @@ void Plot::plotFingers3D(const std::vector<Grasp>& hand_list, const PointCloudRG
   std::string str, double outer_diameter, double finger_width, double hand_depth, double hand_height) const
 {
   boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer(str);
+  viewer->setBackgroundColor(0, 0, 0);
 
   for (int i = 0; i < hand_list.size(); i++)
   {
