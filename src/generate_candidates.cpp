@@ -82,9 +82,11 @@ int main(int argc, char* argv[])
   bool plot_grasps = config_file.getValueOfKey<bool>("plot_grasps", true);
   bool plot_candidates = config_file.getValueOfKey<bool>("plot_candidates", true);
   bool plot_normals = config_file.getValueOfKey<bool>("plot_normals", false);
+  int max_samples = config_file.getValueOfKey<int>("max_samples", 10);
   std::cout << "plot_grasps: " << plot_grasps << "\n";
   std::cout << "plot_candidates: " << plot_candidates << "\n";
   std::cout << "plot_normals: " << plot_normals << "\n";
+  std::cout << "max_samples: " << max_samples << "\n";
 
   // Create object to generate grasp candidates.
   CandidatesGenerator::Parameters generator_params;
@@ -136,10 +138,19 @@ int main(int argc, char* argv[])
   std::vector<Grasp> candidates = candidates_generator.generateGraspCandidates(cloud_cam);
   std::vector<int> labels = handsearch.reevaluateHypotheses(cloud_cam, candidates);
   std::vector<Grasp> good_grasps;
+  std::vector<int> good_index;
   for (int i=0; i<labels.size(); ++i) {
-      if (labels[i]>0) good_grasps.push_back(candidates[i]);
+      if (labels[i]>0) good_index.push_back(i); // good_grasps.push_back(candidates[i]);
   }
-  std::cout << "Generated " << good_grasps.size() << " good grasps." << std::endl;
+
+  std::random_shuffle(good_index.begin(), good_index.end());
+  
+  for (int i=0; i<std::min(max_samples, (int)good_index.size()); ++i) {
+      good_grasps.push_back(candidates[good_index[i]]);
+  }
+
+  std::cout << "Generated " << good_index.size() << " good grasps." << std::endl;
+  std::cout << "Selected " << good_grasps.size() << " good grasps." << std::endl;
   if (plot_grasps) {
       Plot plotter;
       Eigen::Matrix3Xd samples(3, good_grasps.size());
