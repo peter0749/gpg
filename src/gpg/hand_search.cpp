@@ -267,7 +267,7 @@ int HandSearch::labelHypothesis(const PointList& point_list, FingerHand& finger_
 
   // evaluate if the grasp is antipodal
   Antipodal antipodal;
-  int antipodal_result = antipodal.evaluateGrasp(point_list_learning, 0.003, finger_hand.getLateralAxis(),
+  int antipodal_result = antipodal.evaluateGrasp(point_list_learning, 0.01, finger_hand.getLateralAxis(),
     finger_hand.getForwardAxis(), params_.rotation_axis_);
 
   return antipodal_result;
