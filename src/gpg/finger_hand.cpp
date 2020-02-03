@@ -5,7 +5,7 @@ FingerHand::FingerHand(double finger_width, double hand_outer_diameter,	double h
   :	finger_width_(finger_width), hand_depth_(hand_depth),	lateral_axis_(-1),
    	forward_axis_(-1)
 {
-	int n = 10; // number of finger placements to consider over a single hand diameter
+	const int n = 10; // number of finger placements to consider over a single hand diameter
 
 	// Calculate the finger spacing.
 	Eigen::VectorXd fs_half;
@@ -20,6 +20,7 @@ FingerHand::FingerHand(double finger_width, double hand_outer_diameter,	double h
 
 void FingerHand::evaluateFingers(const Eigen::Matrix3Xd& points, double bite, int idx)
 {
+  const double min_dist_to_bottom = 0.005; // FIXME: To avoid gripper getting through points. This is a workaround.
   // Calculate top and bottom of the hand (top = fingertip, bottom = base).
   top_ = bite;
   bottom_ = bite - hand_depth_;
@@ -34,7 +35,7 @@ void FingerHand::evaluateFingers(const Eigen::Matrix3Xd& points, double bite, in
     {
       // Check that the hand would be able to extend by <bite> onto the object without causing the back of the hand to
       // collide with <points>.
-      if (points(forward_axis_, i) < bottom_)
+      if (points(forward_axis_, i) < bottom_ + min_dist_to_bottom)
       {
         return;
       }
