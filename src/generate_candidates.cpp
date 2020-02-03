@@ -2,6 +2,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <chrono>
 
 // Custom
 #include <gpg/candidates_generator.h>
@@ -130,18 +131,23 @@ int main(int argc, char* argv[])
     cloud_cam.setNormalsFromFile(argv[3]);
     std::cout << "Loaded surface normals from file.\n";
   }
+  std::chrono::steady_clock::time_point total_begin = std::chrono::steady_clock::now();
 
   // Point cloud preprocessing: voxelize, remove statistical outliers, workspace filter, compute normals, subsample.
   candidates_generator.preprocessPointCloud(cloud_cam);
 
   // Generate a list of grasp candidates.
   std::vector<Grasp> candidates = candidates_generator.generateGraspCandidates(cloud_cam);
+  std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
   std::vector<int> labels = handsearch.reevaluateHypotheses(cloud_cam, candidates);
   std::vector<Grasp> good_grasps;
   std::vector<int> good_index;
   for (int i=0; i<labels.size(); ++i) {
       if (labels[i]>0) good_index.push_back(i); // good_grasps.push_back(candidates[i]);
   }
+  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+  std::cout << "Evaluation => " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()*1e-6 << " seconds" << std::endl;
+  std::cout << "Total => " << std::chrono::duration_cast<std::chrono::microseconds>(end - total_begin).count()*1e-6 << " seconds" << std::endl;
 
   std::random_shuffle(good_index.begin(), good_index.end());
   
