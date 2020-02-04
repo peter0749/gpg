@@ -22,12 +22,13 @@ link_directories(${Boost_LIBRARY_DIRS})
 add_definitions(${Boost_DEFINITIONS})
 
 ## Set compiler optimization flags
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Release)
+if(NOT CXX_COMPILE_FLAGS_M)
+  set(CXX_COMPILE_FLAGS_M " -O2 -ffast-math -fopenmp -fPIC -Wno-deprecated -Wenum-compare -march=native ")
 endif()
-set(CXX_COMPILE_FLAGS_M " -fopenmp -fPIC -Wno-deprecated -Wenum-compare")
-set(RELEASE_OPTI " -O2 -march=native")
-set(DEBUG_OPTI " -O0 -g")
+if(NOT EXTRA_CXX_FLAG)
+  set(EXTRA_CXX_FLAG "")
+endif()
 
 string(REPLACE "-O3" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 string(REPLACE "-O3" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
@@ -42,11 +43,7 @@ string(REPLACE "-g" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 string(REPLACE "-g" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 string(REPLACE "-g" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMPILE_FLAGS_M} ${DEBUG_OPTI}")
-else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMPILE_FLAGS_M} ${RELEASE_OPTI}")
-endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMPILE_FLAGS_M} ${EXTRA_CXX_FLAG}")
 
 
 # Add the headers from the <include> directory
