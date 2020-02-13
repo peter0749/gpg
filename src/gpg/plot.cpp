@@ -34,6 +34,7 @@ void Plot::plotFingers3D(const std::vector<Grasp>& hand_list, const PointCloudRG
   pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGBA> rgb(cloud);
   viewer->addPointCloud<pcl::PointXYZRGBA>(cloud, rgb, "cloud");
   viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "cloud");
+  viewer->addCoordinateSystem (0.1);
 
   runViewer(viewer);
 }
@@ -293,6 +294,7 @@ void Plot::plotNormals(const CloudCamera& cloud_cam)
       normal_colors[color_id][1], normal_colors[color_id][2], cone_name);
   }
 
+  viewer->addCoordinateSystem (0.1);
   runViewer(viewer);
 }
 
@@ -325,6 +327,7 @@ void Plot::plotNormals(const PointCloudRGBA::Ptr& cloud, const PointCloudRGBA::P
   // draw the normals
   addCloudNormalsToViewer(viewer, normals_cloud, 2, blue, red, std::string("cloud"), std::string("normals"));
 
+  viewer->addCoordinateSystem (0.1);
   runViewer(viewer);
 }
 
@@ -357,6 +360,7 @@ void Plot::plotNormals(const PointCloudRGBA::Ptr& cloud, const Eigen::Matrix3Xd&
   // draw the normals
   addCloudNormalsToViewer(viewer, normals_cloud, 2, blue, red, std::string("cloud"), std::string("normals"));
 
+  viewer->addCoordinateSystem (0.1);
   runViewer(viewer);
 }
 
@@ -382,6 +386,7 @@ void Plot::plotNormals(const Eigen::Matrix3Xd& pts, const Eigen::Matrix3Xd& norm
 
   boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = createViewer("Normals");
   addCloudNormalsToViewer(viewer, normals_cloud, 2, blue, red, std::string("cloud"), std::string("normals"));
+  viewer->addCoordinateSystem (0.1);
   runViewer(viewer);
 }
 

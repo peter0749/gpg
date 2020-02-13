@@ -96,7 +96,7 @@ CloudCamera::CloudCamera(const std::string& filename, const Eigen::Matrix3Xd& vi
   sample_indices_.resize(0);
   samples_.resize(3,0);
   normals_.resize(3,0);
-  cloud_processed_ = loadPointCloudFromFile(filename);
+  cloud_processed_ = CloudCamera::loadPointCloudFromFile(filename);
   cloud_original_ = cloud_processed_;
   camera_source_ = Eigen::MatrixXi::Ones(1, cloud_processed_->size());
   std::cout << "Loaded point cloud with " << camera_source_.cols() << " points \n";
@@ -114,8 +114,8 @@ CloudCamera::CloudCamera(const std::string& filename_left, const std::string& fi
   // load and combine the two point clouds
   std::cout << "Loading point clouds ...\n";
   PointCloudRGB::Ptr cloud_left(new PointCloudRGB), cloud_right(new PointCloudRGB);
-  cloud_left = loadPointCloudFromFile(filename_left);
-  cloud_right = loadPointCloudFromFile(filename_right);
+  cloud_left = CloudCamera::loadPointCloudFromFile(filename_left);
+  cloud_right = CloudCamera::loadPointCloudFromFile(filename_right);
 
   std::cout << "Concatenating point clouds ...\n";
   *cloud_processed_ = *cloud_left + *cloud_right;
@@ -509,13 +509,37 @@ void CloudCamera::setNormalsFromFile(const std::string& filename)
 }
 
 
-PointCloudRGB::Ptr CloudCamera::loadPointCloudFromFile(const std::string& filename) const
+PointCloudRGB::Ptr CloudCamera::loadPointCloudFromFile(const std::string& filename)
 {
   PointCloudRGB::Ptr cloud(new PointCloudRGB);
-  if (pcl::io::loadPCDFile<pcl::PointXYZRGBA>(filename, *cloud) == -1)
+  std::string filename_lower = boost::algorithm::to_lower_copy(filename);
+  if (boost::algorithm::ends_with(filename_lower, ".pcd")) 
   {
-    std::cout << "Couldn't read .pcd file: " << filename << "\n";
-    cloud->points.resize(0);
+      if (pcl::io::loadPCDFile<pcl::PointXYZRGBA>(filename, *cloud) == -1)
+      {
+        std::cout << "Couldn't read .pcd file: " << filename << "\n";
+        cloud->points.resize(0);
+      }
+  } 
+  else if (boost::algorithm::ends_with(filename_lower, ".obj")) 
+  {
+      if (pcl::io::loadOBJFile<pcl::PointXYZRGBA>(filename, *cloud) == -1)
+      {
+        std::cout << "Couldn't read .obj file: " << filename << "\n";
+        cloud->points.resize(0);
+      }
+  }
+  else if (boost::algorithm::ends_with(filename_lower, ".ply")) 
+  {
+      if (pcl::io::loadPLYFile<pcl::PointXYZRGBA>(filename, *cloud) == -1)
+      {
+        std::cout << "Couldn't read .ply file: " << filename << "\n";
+        cloud->points.resize(0);
+      }
+  }
+  else 
+  {
+      throw std::invalid_argument("Invalid file format!");
   }
   return cloud;
 }

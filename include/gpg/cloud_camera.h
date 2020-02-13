@@ -39,6 +39,9 @@
 #include <math.h>
 #include <vector>
 #include <set>
+#include <stdexcept>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <Eigen/Dense>
 
@@ -48,8 +51,11 @@
 #include <pcl/search/kdtree.h>
 #include <pcl/search/impl/kdtree.hpp>
 #include <pcl/io/pcd_io.h>
+#include <pcl/io/ply_io.h>
+#include <pcl/io/obj_io.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/filters/voxel_grid.h>
 
 #include <gpg/eigen_utils.h>
 
@@ -337,15 +343,15 @@ public:
     view_points_ = view_points;
   }
 
-
-private:
-
   /**
    * \brief Load a point cloud from a file.
    * \param filename the location of the file
    * \return the point cloud
   */
-  PointCloudRGB::Ptr loadPointCloudFromFile(const std::string& filename) const;
+  static PointCloudRGB::Ptr loadPointCloudFromFile(const std::string& filename);
+
+
+private:
 
   PointCloudRGB::Ptr cloud_processed_; ///< the (processed) point cloud
   PointCloudRGB::Ptr cloud_original_; ///< the original point cloud
