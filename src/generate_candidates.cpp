@@ -305,7 +305,7 @@ int main(int argc, char* argv[])
       Grasp single_grasp_I = transformGrasp(single_grasp, finger_hand, InvTrans);
       grasp_vec_centered.push_back(single_grasp_I);
 
-      pcl::CropBox<pcl::PointXYZRGBA> boxFilter;
+      pcl::CropBox<pcl::PointXYZRGBA> boxFilter(true);
       boxFilter.setMin(Eigen::Vector4f(0, -(hand_outer_diameter-finger_width*2)/2.0, -hand_height/2.0, 1.0));
       boxFilter.setMax(Eigen::Vector4f(top-bottom, (hand_outer_diameter-finger_width*2)/2.0, hand_height/2.0, 1.0));
       boxFilter.setTransform(InvTrans.cast<float>());
