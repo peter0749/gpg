@@ -48,7 +48,6 @@ Eigen::Affine3d loadRegistration(const std::string& filepath)
   std::ifstream ifs(filepath, std::ifstream::in);
   std::string s;
   ifs >> s;
-  std::cout << s << std::endl;
   Eigen::Matrix4d mesh2cloud;
   mesh2cloud.row(3) << 0,0,0,1;
   std::stringstream ss;
@@ -56,7 +55,6 @@ Eigen::Affine3d loadRegistration(const std::string& filepath)
   std::string substr;
   for (int i=0; i<12; ++i) {
       std::getline(ss, substr, ',');
-      std::cout << i << ' ' << substr << std::endl;
       mesh2cloud.col(i/3).row(i%3) << std::stod(substr);
   }
   return Eigen::Affine3d(mesh2cloud);
@@ -184,7 +182,6 @@ int main(int argc, char* argv[])
   */
 
   Eigen::Affine3d mesh2cloud(loadRegistration(argv[4]));
-  std::cout << mesh2cloud.matrix() << std::endl;
   // pcl::transformPointCloud(*mesh_cam.getCloudOriginal(), *new_pc, InvTrans);
 
   // Create object to load point cloud from file.
@@ -211,7 +208,7 @@ int main(int argc, char* argv[])
   std::vector<Grasp> candidates = candidates_generator.generateGraspCandidates(mesh_cam);
   std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
   std::vector<int> labels = handsearch.reevaluateHypotheses(mesh_cam, candidates);
-  std::vector<Grasp> good_grasps;
+  // std::vector<Grasp> good_grasps;
   std::vector<int> good_index;
   for (int i=0; i<labels.size(); ++i) {
       if (labels[i]==2) good_index.push_back(i); // good_grasps.push_back(candidates[i]);
@@ -220,25 +217,34 @@ int main(int argc, char* argv[])
   std::cout << "Evaluation => " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()*1e-6 << " seconds" << std::endl;
   std::cout << "Total => " << std::chrono::duration_cast<std::chrono::microseconds>(end - total_begin).count()*1e-6 << " seconds" << std::endl;
 
-  std::random_shuffle(good_index.begin(), good_index.end());
+  // std::random_shuffle(good_index.begin(), good_index.end());
   
+  /*
   for (int i=0; i<std::min(max_samples, (int)good_index.size()); ++i) {
       good_grasps.push_back(candidates[good_index[i]]);
   }
+  */
 
   std::cout << "Generated " << good_index.size() << " good grasps." << std::endl;
-  std::cout << "Selected " << good_grasps.size() << " good grasps." << std::endl;
+  // std::cout << "Selected " << good_grasps.size() << " good grasps." << std::endl;
+  /*
   if (plot_grasps) {
       Plot plotter;
       plotter.plotFingers3D(good_grasps, mesh_cam.getCloudOriginal(), "Good Grasps", hand_search_params.hand_outer_diameter_, 
               hand_search_params.finger_width_, hand_search_params.hand_depth_, hand_search_params.hand_height_);
   }
+  */
   // Eigen::Vector3d euler_mean, euler2_mean;
   std::vector<int> roll_h(32,0), pitch_h(32,0), yaw_h(32,0);
+  std::ofstream output_fs(argv[5]);
   // euler_mean.setZero();
   // euler2_mean.setZero();
+  /*
   for (int i=0; i<good_grasps.size(); ++i) {
       Grasp single_grasp = good_grasps[i];
+  */
+  for (auto idx : good_index) {
+      Grasp single_grasp = candidates[idx];
       std::vector<Grasp> grasp_vec, grasp_vec_centered;
       Eigen::Vector3d trans = single_grasp.getGraspBottom().cast<double>();
       Eigen::Vector3d top_vec = single_grasp.getGraspTop();
@@ -256,7 +262,7 @@ int main(int argc, char* argv[])
           plotter.plotFingers3D(grasp_vec, cloud_cam.getCloudOriginal(), "Good Grasps (cloud)", hand_search_params.hand_outer_diameter_, 
                   hand_search_params.finger_width_, hand_search_params.hand_depth_, hand_search_params.hand_height_);
       }
-      Eigen::Matrix4d Trans_m;
+      Eigen::Matrix4d Trans_m, InvTrans_m;
       Eigen::Affine3d Trans, InvTrans;
       Eigen::Vector3d euler;
       if (rot(2,2)<0) // up-side-down
@@ -269,12 +275,13 @@ int main(int argc, char* argv[])
       Trans_m.block<3,1>(0,3) = trans;
       Trans.matrix() = Trans_m;
       InvTrans = Trans.inverse();
+      InvTrans_m = InvTrans.matrix();
       double roll = euler(0);
       double pitch = euler(1);
       double yaw = euler(2);
 
-      std::cout << "Euler Angles (x-roll, y-pitch, z-yaw): " << euler.transpose() << std::endl;
-      std::cout << "Translation: " << trans.transpose() << std::endl;
+      // std::cout << "Euler Angles (x-roll, y-pitch, z-yaw): " << euler.transpose() << std::endl;
+      // std::cout << "Translation: " << trans.transpose() << std::endl;
       // euler_mean += euler;
       // euler2_mean += (Eigen::Vector3d)(euler.array()*euler.array());
 
@@ -284,6 +291,14 @@ int main(int argc, char* argv[])
       ++roll_h[std::min((int)roll_h.size()-1,(int)(roll/PI_2*roll_h.size()))];
       ++pitch_h[std::min((int)pitch_h.size()-1,(int)(pitch/PI_2*pitch_h.size()))];
       ++yaw_h[std::min((int)yaw_h.size()-1,(int)(yaw/PI_2*yaw_h.size()))];
+
+      output_fs << std::setprecision(8) \
+                << Trans_m.row(0)         << ' ' \
+                << Trans_m.row(1)         << ' ' \
+                << Trans_m.row(2)         << ' ' \
+                << InvTrans_m.row(0)      << ' ' \
+                << InvTrans_m.row(1)      << ' ' \
+                << InvTrans_m.row(2)      << std::endl;
 
       /*
       std::cout << Trans.matrix()    << std::endl \
@@ -350,6 +365,8 @@ int main(int argc, char* argv[])
   std::cout << "Yaw histogram (0~2*pi):" << std::endl;
   for (auto v : yaw_h) std::cout << v << ' ';
   std::cout << std::endl;
+
+  output_fs.close();
   
   return 0;
 }
