@@ -313,7 +313,6 @@ int main(int argc, char* argv[])
                 << trans   << std::endl;
 
       std::cout << std::endl;
-      */
 
       std::vector<int> enclosed_indecies;
       FingerHand finger_hand(finger_width, hand_outer_diameter, hand_depth);
@@ -346,6 +345,7 @@ int main(int argc, char* argv[])
       }
       new_pc->clear();
       new_pc_crop->clear();
+      */
   }
 
   // euler_mean /= (double)good_grasps.size();
