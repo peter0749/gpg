@@ -24,7 +24,7 @@ add_definitions(${Boost_DEFINITIONS})
 ## Set compiler optimization flags
 set(CMAKE_BUILD_TYPE Release)
 if(NOT CXX_COMPILE_FLAGS_M)
-  set(CXX_COMPILE_FLAGS_M " -O2 -ffast-math -fopenmp -fPIC -Wno-deprecated -Wenum-compare -march=native ")
+  set(CXX_COMPILE_FLAGS_M " -O2 -ffast-math -fopenmp -fPIC -Wno-deprecated -Wenum-compare ")
 endif()
 if(NOT EXTRA_CXX_FLAG)
   set(EXTRA_CXX_FLAG "")
