@@ -181,11 +181,11 @@ int main(int argc, char* argv[])
       }
   */
 
-  Eigen::Affine3d mesh2cloud(loadRegistration(argv[4]));
+  Eigen::Affine3d mesh2cloud(loadRegistration(argv[3]));
   // pcl::transformPointCloud(*mesh_cam.getCloudOriginal(), *new_pc, InvTrans);
 
   // Create object to load point cloud from file.
-  CloudCamera cloud_cam(argv[3], view_points);
+  // CloudCamera cloud_cam(argv[3], view_points);
   PointCloudRGB::Ptr mesh_cam_pts = CloudCamera::loadPointCloudFromFile(argv[2]);
   pcl::transformPointCloud(*mesh_cam_pts, *mesh_cam_pts, mesh2cloud);
   CloudCamera mesh_cam(mesh_cam_pts, 0, view_points);
@@ -194,11 +194,13 @@ int main(int argc, char* argv[])
     std::cout << "mesh_cam: Input point cloud is empty or does not exist!\n";
     return (-1);
   }
+  /*
   if (cloud_cam.getCloudOriginal()->size() == 0)
   {
     std::cout << "cloud_cam: Input point cloud is empty or does not exist!\n";
     return (-1);
   }
+  */
   std::chrono::steady_clock::time_point total_begin = std::chrono::steady_clock::now();
 
   // Point cloud preprocessing: voxelize, remove statistical outliers, workspace filter, compute normals, subsample.
@@ -236,7 +238,7 @@ int main(int argc, char* argv[])
   */
   // Eigen::Vector3d euler_mean, euler2_mean;
   std::vector<int> roll_h(32,0), pitch_h(32,0), yaw_h(32,0);
-  std::ofstream output_fs(argv[5]);
+  std::ofstream output_fs(argv[4]);
   // euler_mean.setZero();
   // euler2_mean.setZero();
   /*
@@ -257,11 +259,13 @@ int main(int argc, char* argv[])
           plotter.plotFingers3D(grasp_vec, mesh_cam.getCloudOriginal(), "Good Grasps (mesh)", hand_search_params.hand_outer_diameter_, 
                   hand_search_params.finger_width_, hand_search_params.hand_depth_, hand_search_params.hand_height_);
       } 
+      /*
       if (plot_grasps) {
           Plot plotter;
           plotter.plotFingers3D(grasp_vec, cloud_cam.getCloudOriginal(), "Good Grasps (cloud)", hand_search_params.hand_outer_diameter_, 
                   hand_search_params.finger_width_, hand_search_params.hand_depth_, hand_search_params.hand_height_);
       }
+      */
       Eigen::Matrix4d Trans_m, InvTrans_m;
       Eigen::Affine3d Trans, InvTrans;
       Eigen::Vector3d euler;
