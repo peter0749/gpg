@@ -72,6 +72,7 @@ Grasp transformGrasp(const Grasp& grasp, const FingerHand &finger_hand, Eigen::A
   return grasp_I;
 }
 
+/*
 inline double random_uniform(void) 
 {
   return std::max(1e-8, std::min(1.0-1e-8,(double)rand() / (double)RAND_MAX));
@@ -92,6 +93,7 @@ Eigen::Quaterniond randomQuaternion(void)
   double u3 = random_uniform();
   return randomQuaternion_sample(u1, u2, u3);
 }
+*/
 
 
 int main(int argc, char* argv[])
