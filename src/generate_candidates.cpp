@@ -212,7 +212,6 @@ int main(int argc, char* argv[])
   std::vector<Grasp> candidates = candidates_generator.generateGraspCandidates(mesh_cam);
   std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
   std::vector<int> labels = handsearch.reevaluateHypotheses(mesh_cam, candidates);
-  // std::vector<Grasp> good_grasps;
   std::vector<int> good_index;
   for (int i=0; i<labels.size(); ++i) {
       if (labels[i]==2) good_index.push_back(i); // good_grasps.push_back(candidates[i]);
@@ -220,24 +219,21 @@ int main(int argc, char* argv[])
   std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
   std::cout << "Evaluation => " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()*1e-6 << " seconds" << std::endl;
   std::cout << "Total => " << std::chrono::duration_cast<std::chrono::microseconds>(end - total_begin).count()*1e-6 << " seconds" << std::endl;
-
-  // std::random_shuffle(good_index.begin(), good_index.end());
-  
-  /*
-  for (int i=0; i<std::min(max_samples, (int)good_index.size()); ++i) {
-      good_grasps.push_back(candidates[good_index[i]]);
-  }
-  */
-
   std::cout << "Generated " << good_index.size() << " good grasps." << std::endl;
-  // std::cout << "Selected " << good_grasps.size() << " good grasps." << std::endl;
-  /*
+
   if (plot_grasps) {
-      Plot plotter;
-      plotter.plotFingers3D(good_grasps, mesh_cam.getCloudOriginal(), "Good Grasps", hand_search_params.hand_outer_diameter_, 
-              hand_search_params.finger_width_, hand_search_params.hand_depth_, hand_search_params.hand_height_);
+      std::vector<Grasp> good_grasps;
+      std::random_shuffle(good_index.begin(), good_index.end());
+      
+      for (int i=0; i<std::min(max_samples, (int)good_index.size()); ++i) {
+          good_grasps.push_back(candidates[good_index[i]]);
+      }
+
+      std::cout << "Selected " << good_grasps.size() << " good grasps." << std::endl;
+          Plot plotter;
+          plotter.plotFingers3D(good_grasps, mesh_cam.getCloudOriginal(), "Good Grasps", hand_search_params.hand_outer_diameter_, 
+                  hand_search_params.finger_width_, hand_search_params.hand_depth_, hand_search_params.hand_height_);
   }
-  */
   // Eigen::Vector3d euler_mean, euler2_mean;
   std::vector<int> roll_h(32,0), pitch_h(32,0), yaw_h(32,0);
   std::ofstream output_fs(argv[4]);
@@ -256,12 +252,12 @@ int main(int argc, char* argv[])
       double top = single_grasp.getTop();
       double bottom = single_grasp.getBottom();
       grasp_vec.push_back(single_grasp);
+      /*
       if (plot_grasps) {
           Plot plotter;
           plotter.plotFingers3D(grasp_vec, mesh_cam.getCloudOriginal(), "Good Grasps (mesh)", hand_search_params.hand_outer_diameter_, 
                   hand_search_params.finger_width_, hand_search_params.hand_depth_, hand_search_params.hand_height_);
       } 
-      /*
       if (plot_grasps) {
           Plot plotter;
           plotter.plotFingers3D(grasp_vec, cloud_cam.getCloudOriginal(), "Good Grasps (cloud)", hand_search_params.hand_outer_diameter_, 

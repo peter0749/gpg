@@ -12,8 +12,8 @@ int Antipodal::evaluateGrasp(const PointList& point_list, double extremal_thresh
 //  double friction_coeff = 20.0; // angle of friction cone in degrees
 //  int viable_thresh = 6; // number of viable points required on each side to be antipodal
 
-  double friction_coeff = 5.0; // angle of friction cone in degrees
-  int viable_thresh = 12; // number of viable points required on each side to be antipodal
+  double friction_coeff = 20.0; // angle of friction cone in degrees
+  int viable_thresh = 6; // number of viable points required on each side to be antipodal
 
   int result = NO_GRASP;
 
