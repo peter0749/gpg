@@ -4,6 +4,9 @@ const int Antipodal::NO_GRASP = 0; // normals point not toward any finger
 const int Antipodal::HALF_GRASP = 1; // normals point towards one finger
 const int Antipodal::FULL_GRASP = 2; // normals point towards both fingers
 
+Antipodal::Antipodal(double friction_coeff, int viable_thresh) : friction_coeff_(friction_coeff), viable_thresh_(viable_thresh) {
+    // Nothing to do
+}
 
 int Antipodal::evaluateGrasp(const PointList& point_list, double extremal_thresh, int lateral_axis, int forward_axis,
   int vertical_axis) const
@@ -12,8 +15,8 @@ int Antipodal::evaluateGrasp(const PointList& point_list, double extremal_thresh
 //  double friction_coeff = 20.0; // angle of friction cone in degrees
 //  int viable_thresh = 6; // number of viable points required on each side to be antipodal
 
-  double friction_coeff = 20.0; // angle of friction cone in degrees
-  int viable_thresh = 6; // number of viable points required on each side to be antipodal
+  const double &friction_coeff = this->friction_coeff_;
+  const int &viable_thresh = this->viable_thresh_;
 
   int result = NO_GRASP;
 

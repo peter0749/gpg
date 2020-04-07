@@ -107,12 +107,18 @@ int main(int argc, char* argv[])
   double hand_depth = config_file.getValueOfKey<double>("hand_depth", 0.06);
   double hand_height  = config_file.getValueOfKey<double>("hand_height", 0.02);
   double init_bite  = config_file.getValueOfKey<double>("init_bite", 0.01);
+  double friction_coeff = config_file.getValueOfKey<double>("friction_coeff", 20.0);
+  int viable_thresh = config_file.getValueOfKey<int>("viable_thresh", 6);
+  bool negative_sample = config_file.getValueOfKey<bool>("negative_sample", false);
 
   std::cout << "finger_width: " << finger_width << "\n";
   std::cout << "hand_outer_diameter: " << hand_outer_diameter << "\n";
   std::cout << "hand_depth: " << hand_depth << "\n";
   std::cout << "hand_height: " << hand_height << "\n";
   std::cout << "init_bite: " << init_bite << "\n";
+  std::cout << "friction_coeff: " << friction_coeff << "\n";
+  std::cout << "viable_thresh: " << viable_thresh << "\n";
+  std::cout << "negative_sample: " << negative_sample << "\n";
 
   bool voxelize = config_file.getValueOfKey<bool>("voxelize", true);
   bool remove_outliers = config_file.getValueOfKey<bool>("remove_outliers", false);
@@ -165,6 +171,8 @@ int main(int argc, char* argv[])
   hand_search_params.num_samples_ = num_samples;
   hand_search_params.num_threads_ = num_threads;
   hand_search_params.rotation_axis_ = rotation_axis;
+  hand_search_params.friction_coeff_ = friction_coeff;
+  hand_search_params.viable_thresh_ = viable_thresh;
   CandidatesGenerator candidates_generator(generator_params, hand_search_params);
   HandSearch handsearch(hand_search_params);
 
@@ -214,12 +222,14 @@ int main(int argc, char* argv[])
   std::vector<int> labels = handsearch.reevaluateHypotheses(mesh_cam, candidates);
   std::vector<int> good_index;
   for (int i=0; i<labels.size(); ++i) {
-      if (labels[i]==2) good_index.push_back(i); // good_grasps.push_back(candidates[i]);
+      bool b_good = (labels[i]==2);
+      if (negative_sample) b_good = !b_good;
+      if (b_good) good_index.push_back(i); // good_grasps.push_back(candidates[i]);
   }
   std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
   std::cout << "Evaluation => " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()*1e-6 << " seconds" << std::endl;
   std::cout << "Total => " << std::chrono::duration_cast<std::chrono::microseconds>(end - total_begin).count()*1e-6 << " seconds" << std::endl;
-  std::cout << "Generated " << good_index.size() << " good grasps." << std::endl;
+  std::cout << "Generated " << good_index.size() << (negative_sample?" bad":" good") << " grasps." << std::endl;
 
   if (plot_grasps) {
       std::vector<Grasp> good_grasps;
@@ -229,9 +239,9 @@ int main(int argc, char* argv[])
           good_grasps.push_back(candidates[good_index[i]]);
       }
 
-      std::cout << "Selected " << good_grasps.size() << " good grasps." << std::endl;
+      std::cout << "Selected " << good_grasps.size() << " grasps." << std::endl;
           Plot plotter;
-          plotter.plotFingers3D(good_grasps, mesh_cam.getCloudOriginal(), "Good Grasps", hand_search_params.hand_outer_diameter_, 
+          plotter.plotFingers3D(good_grasps, mesh_cam.getCloudOriginal(), "Selected Grasps", hand_search_params.hand_outer_diameter_, 
                   hand_search_params.finger_width_, hand_search_params.hand_depth_, hand_search_params.hand_height_);
   }
   // Eigen::Vector3d euler_mean, euler2_mean;

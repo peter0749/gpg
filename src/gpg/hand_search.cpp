@@ -189,7 +189,6 @@ std::vector<GraspSet> HandSearch::evaluateHands(const CloudCamera& cloud_cam, co
   PointList point_list(points, cloud_cam.getNormals(), cloud_cam.getCameraSource(), cloud_cam.getViewPoints());
   GraspSet::HandGeometry hand_geom(params_.finger_width_, params_.hand_outer_diameter_, params_.hand_depth_,
     params_.hand_height_, params_.init_bite_);
-//  GraspSet hand_set(hand_geom, angles, params_.rotation_axis_);
 
 #ifdef _OPENMP // parallelization using OpenMP
 #pragma omp parallel for num_threads(params_.num_threads_)
@@ -206,7 +205,7 @@ std::vector<GraspSet> HandSearch::evaluateHands(const CloudCamera& cloud_cam, co
       nn_points = point_list.slice(nn_indices);
       nn_points.setPoints(nn_points.getPoints() - frames[i].getSample().replicate(1, nn_points.size()));
 
-      GraspSet hand_set(hand_geom, angles, params_.rotation_axis_);
+      GraspSet hand_set(hand_geom, angles, params_.rotation_axis_, params_.friction_coeff_, params_.viable_thresh_);
       hand_set.evaluateHypotheses(nn_points, frames[i]);
 
       if (hand_set.getIsValid().any()) // at least one feasible hand
@@ -266,7 +265,7 @@ int HandSearch::labelHypothesis(const PointList& point_list, FingerHand& finger_
   PointList point_list_learning = point_list.slice(indices_learning);
 
   // evaluate if the grasp is antipodal
-  Antipodal antipodal;
+  Antipodal antipodal(params_.friction_coeff_, params_.viable_thresh_);
   int antipodal_result = antipodal.evaluateGrasp(point_list_learning, 0.2, finger_hand.getLateralAxis(),
     finger_hand.getForwardAxis(), params_.rotation_axis_);
 

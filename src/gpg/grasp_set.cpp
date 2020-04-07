@@ -12,7 +12,7 @@ const double MAX = (double) (((214013)>>16)&0x7FFF);
 int GraspSet::seed_ = 0;
 
 
-GraspSet::GraspSet() : rotation_axis_(-1)
+GraspSet::GraspSet() : rotation_axis_(-1), viable_thresh_(6), friction_coeff_(20.0)
 {
   sample_.setZero();
   hands_.resize(0);
@@ -21,8 +21,8 @@ GraspSet::GraspSet() : rotation_axis_(-1)
 }
 
 
-GraspSet::GraspSet(const HandGeometry& hand_geometry, const Eigen::VectorXd& angles, int rotation_axis)
-: hand_geometry_(hand_geometry), angles_(angles), rotation_axis_(rotation_axis)
+GraspSet::GraspSet(const HandGeometry& hand_geometry, const Eigen::VectorXd& angles, int rotation_axis, double friction_coeff, int viable_thresh)
+: hand_geometry_(hand_geometry), angles_(angles), rotation_axis_(rotation_axis), friction_coeff_(friction_coeff), viable_thresh_(viable_thresh)
 {
   sample_.setZero();
   hands_.resize(0);
@@ -243,8 +243,8 @@ Grasp GraspSet::createHypothesis(const Eigen::Vector3d& sample, const PointList&
 void GraspSet::labelHypothesis(const PointList& point_list, const FingerHand& finger_hand, Grasp& hand)
 const
 {
-  Antipodal antipodal;
-  int label = antipodal.evaluateGrasp(point_list, 0.003, finger_hand.getLateralAxis(), finger_hand.getForwardAxis(),
+  Antipodal antipodal(friction_coeff_, viable_thresh_);
+  int label = antipodal.evaluateGrasp(point_list, 0.2, finger_hand.getLateralAxis(), finger_hand.getForwardAxis(),
     rotation_axis_);
   hand.setHalfAntipodal(label == Antipodal::HALF_GRASP || label == Antipodal::FULL_GRASP);
   hand.setFullAntipodal(label == Antipodal::FULL_GRASP);

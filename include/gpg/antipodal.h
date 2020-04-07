@@ -52,8 +52,11 @@
 */
 class Antipodal
 {
+private:
+  double friction_coeff_; // angle of friction cone in degrees
+  int viable_thresh_; // number of viable points required on each side to be antipodal
 public:
-
+  Antipodal(double friction_coeff = 20.0, int viable_thresh = 6);
   /**
    * \brief Check if a grasp is antipodal.
    * \param point_list the list of points associated with the grasp

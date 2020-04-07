@@ -158,7 +158,7 @@ class GraspSet
      * \param angles the orientations to be considered
      * \param rotation_axis the axis about which the orientations are considered
      */
-    GraspSet(const HandGeometry& hand_geometry, const Eigen::VectorXd& angles, int rotation_axis);
+    GraspSet(const HandGeometry& hand_geometry, const Eigen::VectorXd& angles, int rotation_axis, double friction_coeff = 20.0, int viable_thresh = 6);
 
     /**
      * \brief Calculate a grasp set given a local reference frame.
@@ -301,6 +301,8 @@ class GraspSet
 
     HandGeometry hand_geometry_; ///< the robot hand geometry
     int rotation_axis_; ///< the axis about which the hand frame is rotated to generate different orientations
+    double friction_coeff_;
+    int viable_thresh_;
 
     static int seed_; ///< seed for the random generator in fastrand()
 

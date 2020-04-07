@@ -92,6 +92,8 @@ public:
     double hand_depth_; ///< the hand depth (length of fingers)
     double hand_height_; ///< the hand extends plus/minus this value along the hand axis
     double init_bite_; ///< the minimum object height
+    double friction_coeff_; ///< friction cone of antipodal grasp
+    double viable_thresh_; ///< viable number for antipodal grasp
   };
 
   /**
