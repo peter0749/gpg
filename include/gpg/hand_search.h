@@ -42,6 +42,7 @@
 #include <pcl/point_cloud.h>
 
 #include <omp.h>
+#include <cmath>
 
 #include <gpg/antipodal.h>
 #include <gpg/cloud_camera.h>
@@ -93,7 +94,7 @@ public:
     double hand_height_; ///< the hand extends plus/minus this value along the hand axis
     double init_bite_; ///< the minimum object height
     double friction_coeff_; ///< friction cone of antipodal grasp
-    double viable_thresh_; ///< viable number for antipodal grasp
+    int    viable_thresh_; ///< viable number for antipodal grasp
   };
 
   /**
@@ -136,7 +137,7 @@ public:
   }
 
 
-private:
+protected:
 
   /**
    * \brief Search robot hand configurations given a list of local reference frames.
@@ -145,7 +146,7 @@ private:
    * \param kdtree the KDTree object used for fast neighborhood search
    * \return the list of robot hand configurations
    */
-  std::vector<GraspSet> evaluateHands(const CloudCamera& cloud_cam, const std::vector<LocalFrame>& frames,
+  virtual std::vector<GraspSet> evaluateHands(const CloudCamera& cloud_cam, const std::vector<LocalFrame>& frames,
     const pcl::KdTreeFLANN<pcl::PointXYZRGBA>& kdtree) const;
 
   /**
@@ -189,6 +190,13 @@ private:
   static const int ROTATION_AXIS_NORMAL; ///< normal axis of local reference frame
   static const int ROTATION_AXIS_BINORMAL; ///< binormal axis of local reference frame
   static const int ROTATION_AXIS_CURVATURE_AXIS; ///< curvature axis of local reference frame
+};
+
+class HandSearchExhausted : public HandSearch {
+public:
+  HandSearchExhausted(Parameters params) : HandSearch(params) {};
+  std::vector<GraspSet> evaluateHands(const CloudCamera& cloud_cam, const std::vector<LocalFrame>& frames,
+    const pcl::KdTreeFLANN<pcl::PointXYZRGBA>& kdtree) const override;
 };
 
 #endif /* HAND_SEARCH_H */ 

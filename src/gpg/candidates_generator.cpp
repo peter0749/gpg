@@ -6,7 +6,11 @@ CandidatesGenerator::CandidatesGenerator(const Parameters& params,
 {
   Eigen::initParallel();
 
-  hand_search_ = new HandSearch(hand_search_params);
+  if (params.exhausted_search_) {
+    hand_search_ = new HandSearchExhausted(hand_search_params);
+  } else {
+    hand_search_ = new HandSearch(hand_search_params);
+  }
 }
 
 

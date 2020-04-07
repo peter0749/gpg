@@ -46,6 +46,7 @@
 #include <boost/random/lagged_fibonacci.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/taus88.hpp>
+#include <boost/math/constants/constants.hpp>
 
 // Eigen
 #include <Eigen/Dense>
@@ -158,14 +159,14 @@ class GraspSet
      * \param angles the orientations to be considered
      * \param rotation_axis the axis about which the orientations are considered
      */
-    GraspSet(const HandGeometry& hand_geometry, const Eigen::VectorXd& angles, int rotation_axis, double friction_coeff = 20.0, int viable_thresh = 6);
+    GraspSet(const HandGeometry& hand_geometry, const Eigen::VectorXd& angles, int rotation_axis, double friction_coeff = 20.0, int viable_thresh = 6); // no virtual here since GraspSetUniformQuat doesn't need "rotation_axis"
 
     /**
      * \brief Calculate a grasp set given a local reference frame.
      * \param point_list the point neighborhood
      * \param local_frame the local reference frame
      */
-    void evaluateHypotheses(const PointList& point_list, const LocalFrame& local_frame);
+    virtual void evaluateHypotheses(const PointList& point_list, const LocalFrame& local_frame);
 
     /**
      * \brief Calculate the set of shadow points for a grasp set.
@@ -239,7 +240,7 @@ class GraspSet
     }
 
 
-  private:
+  protected:
 
     /**
      * \brief Calculate a single shadow.
@@ -313,5 +314,12 @@ class GraspSet
 
     static const bool MEASURE_TIME; ///< if runtime is measured
 };
+
+class GraspSetUniformQuat : public GraspSet {
+    public:
+        GraspSetUniformQuat(const HandGeometry& hand_geometry, const Eigen::VectorXd& us, double friction_coeff = 20.0, int viable_thresh = 6);
+        void evaluateHypotheses(const PointList& point_list, const LocalFrame& local_frame) override;
+};
+
 
 #endif /* GRASP_SET_H_ */

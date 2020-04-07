@@ -277,3 +277,93 @@ Vector3iSet GraspSet::intersection(const Vector3iSet& set1, const Vector3iSet& s
 
   return set_out;
 }
+
+
+// GraspSet::GraspSet(const HandGeometry& hand_geometry, const Eigen::VectorXd& angles, int rotation_axis, double friction_coeff, int viable_thresh)
+GraspSetUniformQuat::GraspSetUniformQuat(const HandGeometry& hand_geometry, const Eigen::VectorXd& us, double friction_coeff, int viable_thresh)
+: GraspSet::GraspSet(hand_geometry, us, 2, friction_coeff, viable_thresh)
+{
+    // Do nothing
+}
+
+inline Eigen::Quaterniond quaternionSpaceUniform(double u1, double u2, double u3) 
+{
+  const double PI_2 = boost::math::constants::pi<double>()*2;
+  Eigen::Quaterniond random_quat(std::sqrt(1.-u1)*std::sin(PI_2*u2), std::sqrt(1.-u1)*std::cos(PI_2*u2), \
+                                 std::sqrt(u1   )*std::sin(PI_2*u3), std::sqrt(u1   )*std::cos(PI_2*u3));
+  return random_quat;
+}
+
+void GraspSetUniformQuat::evaluateHypotheses(const PointList& point_list, const LocalFrame& local_frame)
+{
+  int u_size = angles_.size();
+  int angles_size = u_size * u_size * u_size; // u1, u2, u3
+  hands_.resize(angles_size);
+  sample_ = local_frame.getSample();
+  is_valid_ = Eigen::Array<bool, 1, Eigen::Dynamic>::Constant(1, angles_size, false);
+
+  FingerHand finger_hand(hand_geometry_.finger_width_, hand_geometry_.outer_diameter_, hand_geometry_.depth_);
+  Eigen::Matrix3d rot_binormal;
+
+  // Set the lateral and forward axis of the robot hand frame (closing direction and grasp approach direction).
+  if (rotation_axis_ == ROTATION_AXIS_CURVATURE_AXIS)
+  {
+    finger_hand.setLateralAxis(1);
+    finger_hand.setForwardAxis(0);
+
+    // Rotation about binormal by 180 degrees (reverses direction of normal)
+    rot_binormal <<  -1.0,  0.0,  0.0,
+      0.0,  1.0,  0.0,
+      0.0,  0.0, -1.0;
+  }
+
+  // Local reference frame
+  Eigen::Matrix3d local_frame_mat;
+  local_frame_mat << local_frame.getNormal(), local_frame.getBinormal(), local_frame.getCurvatureAxis();
+
+  // Evaluate grasp at each hand orientation.
+  int grasp_cnt = 0;
+  for (int u1 = 0; u1 < u_size; ++u1) 
+  for (int u2 = 0; u2 < u_size; ++u2) 
+  for (int u3 = 0; u3 < u_size; ++u3) 
+  {
+    double u1_d = angles_(u1);
+    double u2_d = angles_(u2);
+    double u3_d = angles_(u3);
+    Eigen::Matrix3d rot = quaternionSpaceUniform(u1_d, u2_d, u3_d).toRotationMatrix();
+
+    // Rotate points into this hand orientation.
+    Eigen::Matrix3d frame_rot;
+    frame_rot.noalias() = local_frame_mat * rot_binormal * rot;
+    PointList point_list_frame = point_list.rotatePointList(frame_rot.transpose());
+
+    // Crop points on hand height.
+    PointList point_list_cropped = point_list_frame.cropByHandHeight(hand_geometry_.height_);
+
+    // Evaluate finger placements for this orientation.
+    finger_hand.evaluateFingers(point_list_cropped.getPoints(), hand_geometry_.init_bite_);
+
+    // Check that there is at least one feasible 2-finger placement.
+    finger_hand.evaluateHand();
+
+    if (finger_hand.getHand().any())
+    {
+      // Try to move the hand as deep as possible onto the object.
+      int finger_idx = finger_hand.deepenHand(point_list_cropped.getPoints(), hand_geometry_.init_bite_, hand_geometry_.depth_);
+
+      // Calculate points in the closing region of the hand.
+      std::vector<int> indices_closing = finger_hand.computePointsInClosingRegion(point_list_cropped.getPoints(), finger_idx);
+      if (indices_closing.size() == 0)
+      {
+        continue;
+      }
+
+      // create the grasp hypothesis
+      Grasp hand = createHypothesis(local_frame.getSample(), point_list_cropped, indices_closing, frame_rot,
+        finger_hand);
+      hands_[grasp_cnt] = hand;
+      is_valid_[grasp_cnt] = true;
+    }
+    ++grasp_cnt;
+  }
+}

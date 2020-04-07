@@ -271,3 +271,60 @@ int HandSearch::labelHypothesis(const PointList& point_list, FingerHand& finger_
 
   return antipodal_result;
 }
+
+std::vector<GraspSet> HandSearchExhausted::evaluateHands(const CloudCamera& cloud_cam, const std::vector<LocalFrame>& frames,
+  const pcl::KdTreeFLANN<pcl::PointXYZRGBA>& kdtree) const
+{
+  double t1 = omp_get_wtime();
+
+  // possible angles used for hand orientations
+  int u_size = std::round(std::pow(params_.num_orientations_, 1.0/3.0));
+  Eigen::VectorXd us = Eigen::VectorXd::LinSpaced(u_size, 0.0, 1.0);
+
+  const PointCloudRGB::Ptr& cloud = cloud_cam.getCloudProcessed();
+  Eigen::Matrix3Xd points = cloud->getMatrixXfMap().block(0, 0, 3, cloud->size()).cast<double>();
+  std::vector<GraspSet> hand_set_list(frames.size());
+  PointList point_list(points, cloud_cam.getNormals(), cloud_cam.getCameraSource(), cloud_cam.getViewPoints());
+  GraspSet::HandGeometry hand_geom(params_.finger_width_, params_.hand_outer_diameter_, params_.hand_depth_,
+    params_.hand_height_, params_.init_bite_);
+
+#ifdef _OPENMP // parallelization using OpenMP
+#pragma omp parallel for num_threads(params_.num_threads_)
+#endif
+  for (std::size_t i = 0; i < frames.size(); i++)
+  {
+    pcl::PointXYZRGBA sample = eigenVectorToPcl(frames[i].getSample());
+    std::vector<int> nn_indices;
+    std::vector<float> nn_dists;
+    PointList nn_points;
+
+    if (kdtree.radiusSearch(sample, nn_radius_, nn_indices, nn_dists) > 0)
+    {
+      nn_points = point_list.slice(nn_indices);
+      nn_points.setPoints(nn_points.getPoints() - frames[i].getSample().replicate(1, nn_points.size()));
+
+      GraspSetUniformQuat hand_set(hand_geom, us, params_.friction_coeff_, params_.viable_thresh_);
+      hand_set.evaluateHypotheses(nn_points, frames[i]);
+
+      if (hand_set.getIsValid().any()) // at least one feasible hand
+      {
+        hand_set_list[i] = hand_set;
+      }
+    }
+  }
+
+  // concatenate the grasp lists
+  std::vector<GraspSet> hand_set_list_out;
+  for (std::size_t i = 0; i < hand_set_list.size(); i++)
+  {
+    if (hand_set_list[i].getIsValid().any())
+    {
+      hand_set_list_out.push_back(hand_set_list[i]);
+    }
+  }
+
+  double t2 = omp_get_wtime();
+  std::cout << " Found " << hand_set_list_out.size() << " grasp candidate sets in " << t2 - t1 << " sec.\n";
+
+  return hand_set_list_out;
+}

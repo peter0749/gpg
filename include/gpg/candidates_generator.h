@@ -75,6 +75,7 @@ class CandidatesGenerator
       bool voxelize_; ///< if the point cloud gets voxelized
       int num_samples_; ///< the number of samples to be used in the search
       int num_threads_; ///< the number of CPU threads to be used in the search
+      bool exhausted_search_; ///< Use exhausted search on rotation (in quaternion space)
       std::vector<double> workspace_; ///< the robot's workspace
     };
 

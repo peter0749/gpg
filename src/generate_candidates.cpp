@@ -110,6 +110,7 @@ int main(int argc, char* argv[])
   double friction_coeff = config_file.getValueOfKey<double>("friction_coeff", 20.0);
   int viable_thresh = config_file.getValueOfKey<int>("viable_thresh", 6);
   bool negative_sample = config_file.getValueOfKey<bool>("negative_sample", false);
+  bool exhausted_search = config_file.getValueOfKey<bool>("exhausted_search", false);
 
   std::cout << "finger_width: " << finger_width << "\n";
   std::cout << "hand_outer_diameter: " << hand_outer_diameter << "\n";
@@ -119,6 +120,7 @@ int main(int argc, char* argv[])
   std::cout << "friction_coeff: " << friction_coeff << "\n";
   std::cout << "viable_thresh: " << viable_thresh << "\n";
   std::cout << "negative_sample: " << negative_sample << "\n";
+  std::cout << "exhausted_search: " << exhausted_search << "\n";
 
   bool voxelize = config_file.getValueOfKey<bool>("voxelize", true);
   bool remove_outliers = config_file.getValueOfKey<bool>("remove_outliers", false);
@@ -160,6 +162,7 @@ int main(int argc, char* argv[])
   generator_params.remove_statistical_outliers_ = remove_outliers;
   generator_params.voxelize_ = voxelize;
   generator_params.workspace_ = workspace;
+  generator_params.exhausted_search_ = exhausted_search;
   HandSearch::Parameters hand_search_params;
   hand_search_params.finger_width_ = finger_width;
   hand_search_params.hand_outer_diameter_ = hand_outer_diameter;
