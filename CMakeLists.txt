@@ -24,7 +24,7 @@ add_definitions(${Boost_DEFINITIONS})
 ## Set compiler optimization flags
 set(CMAKE_BUILD_TYPE Release)
 if(NOT CXX_COMPILE_FLAGS_M)
-  set(CXX_COMPILE_FLAGS_M " -O2 -ffast-math -fopenmp -fPIC -Wno-deprecated -Wenum-compare ")
+  set(CXX_COMPILE_FLAGS_M " -O0 -fopenmp -fPIC -Wno-deprecated -Wenum-compare ")
 endif()
 if(NOT EXTRA_CXX_FLAG)
   set(EXTRA_CXX_FLAG "")
@@ -71,6 +71,13 @@ add_library(${PROJECT_NAME}_point_list src/${PROJECT_NAME}/point_list.cpp)
 # This executable is for testing the shared library
 add_executable(${PROJECT_NAME}_generate_candidates src/generate_candidates.cpp)
 target_link_libraries(${PROJECT_NAME}_generate_candidates
+                      ${PROJECT_NAME}_config_file
+                      ${PROJECT_NAME}_grasp_candidates_generator
+                      ${Boost_LIBRARIES}
+                      Boost::thread)
+
+add_executable(${PROJECT_NAME}_generate_samples src/generate_samples.cpp)
+target_link_libraries(${PROJECT_NAME}_generate_samples
                       ${PROJECT_NAME}_config_file
                       ${PROJECT_NAME}_grasp_candidates_generator
                       ${Boost_LIBRARIES}
