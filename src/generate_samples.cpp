@@ -42,6 +42,23 @@ std::vector<double> stringToDouble(const std::string& str)
   return values;
 }
 
+// function to load registrated object pose between mesh and point cloud
+Eigen::Affine3d loadRegistration(const std::string& filepath) 
+{
+  std::ifstream ifs(filepath, std::ifstream::in);
+  std::string s;
+  ifs >> s;
+  Eigen::Matrix4d mesh2cloud;
+  mesh2cloud.row(3) << 0,0,0,1;
+  std::stringstream ss;
+  ss << s;
+  std::string substr;
+  for (int i=0; i<12; ++i) {
+      std::getline(ss, substr, ',');
+      mesh2cloud.col(i/3).row(i%3) << std::stod(substr);
+  }
+  return Eigen::Affine3d(mesh2cloud);
+}
 
 int main(int argc, char* argv[])
 {
@@ -123,6 +140,8 @@ int main(int argc, char* argv[])
 
   // Create object to load point cloud from file.
   PointCloudRGB::Ptr mesh_cam_pts = CloudCamera::loadPointCloudFromFile(argv[2]);
+  Eigen::Affine3d mesh2cloud(loadRegistration(argv[3]));
+  pcl::transformPointCloud(*mesh_cam_pts, *mesh_cam_pts, mesh2cloud);
   CloudCamera mesh_cam(mesh_cam_pts, 0, view_points);
   if (mesh_cam.getCloudOriginal()->size() == 0)
   {
@@ -140,7 +159,7 @@ int main(int argc, char* argv[])
   std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
   std::cout << "Total => " << std::chrono::duration_cast<std::chrono::microseconds>(end - total_begin).count()*1e-6 << " seconds" << std::endl;
 
-  std::ofstream output_fs(argv[3]);
+  std::ofstream output_fs(argv[4]);
 
   for (const auto &single_grasp : candidates) {
       std::vector<Grasp> grasp_vec, grasp_vec_centered;

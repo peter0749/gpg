@@ -24,7 +24,7 @@ add_definitions(${Boost_DEFINITIONS})
 ## Set compiler optimization flags
 set(CMAKE_BUILD_TYPE Release)
 if(NOT CXX_COMPILE_FLAGS_M)
-  set(CXX_COMPILE_FLAGS_M " -O0 -fopenmp -fPIC -Wno-deprecated -Wenum-compare ")
+  set(CXX_COMPILE_FLAGS_M " -O2 -fopenmp -fPIC -Wno-deprecated -Wenum-compare ")
 endif()
 if(NOT EXTRA_CXX_FLAG)
   set(EXTRA_CXX_FLAG "")
@@ -153,6 +153,10 @@ target_link_libraries(${PROJECT_NAME}_point_list
 # Rename executable.
 set_target_properties(${PROJECT_NAME}_generate_candidates
                       PROPERTIES OUTPUT_NAME generate_candidates
+                      PREFIX "")
+
+set_target_properties(${PROJECT_NAME}_generate_samples
+                      PROPERTIES OUTPUT_NAME generate_samples
                       PREFIX "")
 
 set_target_properties(${PROJECT_NAME}_grasp_candidates_generator
