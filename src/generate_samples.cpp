@@ -63,6 +63,7 @@ Eigen::Affine3d loadRegistration(const std::string& filepath)
 int main(int argc, char* argv[])
 {
   // Read parameters from configuration file.
+  if (argc<5) exit(1);
   ConfigFile config_file(argv[1]);
 
   double finger_width = config_file.getValueOfKey<double>("finger_width", 0.01);
@@ -105,10 +106,14 @@ int main(int argc, char* argv[])
 
   bool plot_candidates = config_file.getValueOfKey<bool>("plot_candidates", true);
   bool plot_normals = config_file.getValueOfKey<bool>("plot_normals", false);
+  bool output_merged_pcd = config_file.getValueOfKey<bool>("output_merged_pcd", false);
   int max_samples = config_file.getValueOfKey<int>("max_samples", 10);
   std::cout << "plot_candidates: " << plot_candidates << "\n";
   std::cout << "plot_normals: " << plot_normals << "\n";
   std::cout << "max_samples: " << max_samples << "\n";
+  std::cout << "output_merged_pcd: " << output_merged_pcd << "\n";
+
+  if (output_merged_pcd && argc<6) exit(2);
 
   // Create object to generate grasp candidates.
   CandidatesGenerator::Parameters generator_params;
@@ -117,7 +122,7 @@ int main(int argc, char* argv[])
   generator_params.plot_normals_ = plot_normals;
   generator_params.plot_grasps_ = plot_candidates;
   generator_params.remove_statistical_outliers_ = remove_outliers;
-  generator_params.voxelize_ = voxelize;
+  generator_params.voxelize_ = false;
   generator_params.workspace_ = workspace;
   HandSearch::Parameters hand_search_params;
   hand_search_params.finger_width_ = finger_width;
@@ -139,8 +144,30 @@ int main(int argc, char* argv[])
   view_points << camera_pose[3], camera_pose[6], camera_pose[9];
 
   // Create object to load point cloud from file.
-  PointCloudRGB::Ptr mesh_cam_pts = CloudCamera::loadPointCloudFromFile(argv[2]);
-  Eigen::Affine3d mesh2cloud(loadRegistration(argv[3]));
+  PointCloudRGB::Ptr mesh_cam_pts(new PointCloudRGB);
+  pcl::StatisticalOutlierRemoval<pcl::PointXYZRGBA> sor; //filter to remove outliers
+  sor.setStddevMulThresh (2.0);
+  sor.setMeanK(30);
+  int num_point_clouds = argc-(output_merged_pcd?5:4);
+  for (int i=0; i<num_point_clouds; ++i) {
+    PointCloudRGB::Ptr mesh_cam_to_merge = CloudCamera::loadPointCloudFromFile(argv[i+2]);
+
+    // Remove outliers
+    sor.setInputCloud (mesh_cam_to_merge);
+    sor.filter (*mesh_cam_to_merge); 
+
+    *mesh_cam_pts += *mesh_cam_to_merge;
+  }
+
+  if (voxelize) {
+      std::cout << "Voxelizing point cloud..." << std::endl;
+      pcl::VoxelGrid<pcl::PointXYZRGBA> grid;
+      grid.setInputCloud(mesh_cam_pts);
+      grid.setLeafSize(0.003f, 0.003f, 0.003f);
+      grid.filter(*mesh_cam_pts);
+  }
+
+  Eigen::Affine3d mesh2cloud(loadRegistration(argv[num_point_clouds+2]));
   pcl::transformPointCloud(*mesh_cam_pts, *mesh_cam_pts, mesh2cloud);
   CloudCamera mesh_cam(mesh_cam_pts, 0, view_points);
   if (mesh_cam.getCloudOriginal()->size() == 0)
@@ -159,7 +186,7 @@ int main(int argc, char* argv[])
   std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
   std::cout << "Total => " << std::chrono::duration_cast<std::chrono::microseconds>(end - total_begin).count()*1e-6 << " seconds" << std::endl;
 
-  std::ofstream output_fs(argv[4]);
+  std::ofstream output_fs(argv[num_point_clouds+3]);
 
   for (const auto &single_grasp : candidates) {
       std::vector<Grasp> grasp_vec, grasp_vec_centered;
@@ -202,6 +229,10 @@ int main(int argc, char* argv[])
   }
 
   output_fs.close();
+
+  if (output_merged_pcd) {
+    pcl::io::savePCDFileBinary<pcl::PointXYZRGBA>(argv[num_point_clouds+4], *mesh_cam_pts);
+  }
   
   return 0;
 }
