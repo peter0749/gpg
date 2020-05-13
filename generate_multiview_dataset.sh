@@ -24,7 +24,7 @@ ls $PATH_TO_PCDS | while read obj; do
     num_processed=0
     for ((i=0; i<$num_views_total-$TARGET_NUM_VIEWS-1; i+=$TARGET_NUM_VIEWS)); do
         subarray=${array[@]:$i:$TARGET_NUM_VIEWS}
-        "$SAMPLER_PATH" "$SAMPLER_CONFIG_FILE" ${subarray[@]} "$NULL_POSE_PATH" "$OUTPUT_DIR_PROPOSAL/$obj/merged-$num_processed.pose" "$OUTPUT_DIR_MERGED/$obj/merged-$num_processed.pcd"
+        "$SAMPLER_PATH" "$SAMPLER_CONFIG_FILE" ${subarray[@]} "$NULL_POSE_PATH" "$OUTPUT_DIR_PROPOSAL/$obj/merged-$num_processed.pose" "$OUTPUT_DIR_MERGED/$obj/clouds/merged-$num_processed.pcd"
         num_processed=$((num_processed+1))
     done
 done
