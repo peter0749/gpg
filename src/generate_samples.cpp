@@ -8,6 +8,7 @@
 #include <fstream>
 #include <vector>
 #include <chrono>
+#include <random>
 #include <Eigen/Dense>
 #include <pcl/point_cloud.h>
 #include <pcl/common/transforms.h>
@@ -73,6 +74,7 @@ int main(int argc, char* argv[])
   double init_bite  = config_file.getValueOfKey<double>("init_bite", 0.01);
   double friction_coeff = config_file.getValueOfKey<double>("friction_coeff", 20.0);
   int viable_thresh = config_file.getValueOfKey<int>("viable_thresh", 6);
+  double noise_std_cm = config_file.getValueOfKey<double>("noise_std_cm", -1.0);
 
   std::cout << "finger_width: " << finger_width << "\n";
   std::cout << "hand_outer_diameter: " << hand_outer_diameter << "\n";
@@ -81,6 +83,7 @@ int main(int argc, char* argv[])
   std::cout << "init_bite: " << init_bite << "\n";
   std::cout << "friction_coeff: " << friction_coeff << "\n";
   std::cout << "viable_thresh: " << viable_thresh << "\n";
+  std::cout << "noise_std_cm: " << noise_std_cm << "\n";
 
   bool voxelize = config_file.getValueOfKey<bool>("voxelize", true);
   bool remove_outliers = config_file.getValueOfKey<bool>("remove_outliers", false);
@@ -139,6 +142,9 @@ int main(int argc, char* argv[])
   hand_search_params.viable_thresh_ = viable_thresh;
   CandidatesGenerator candidates_generator(generator_params, hand_search_params);
 
+  std::default_random_engine randn_generator;
+  std::normal_distribution<double> randn(0.0, 1.0);
+
   // Set the camera pose.
   Eigen::Matrix3Xd view_points(3,1);
   view_points << camera_pose[3], camera_pose[6], camera_pose[9];
@@ -151,11 +157,9 @@ int main(int argc, char* argv[])
   int num_point_clouds = argc-(output_merged_pcd?5:4);
   for (int i=0; i<num_point_clouds; ++i) {
     PointCloudRGB::Ptr mesh_cam_to_merge = CloudCamera::loadPointCloudFromFile(argv[i+2]);
-
     // Remove outliers
     sor.setInputCloud (mesh_cam_to_merge);
     sor.filter (*mesh_cam_to_merge); 
-
     *mesh_cam_pts += *mesh_cam_to_merge;
   }
 
@@ -165,6 +169,27 @@ int main(int argc, char* argv[])
       grid.setInputCloud(mesh_cam_pts);
       grid.setLeafSize(0.003f, 0.003f, 0.003f);
       grid.filter(*mesh_cam_pts);
+  }
+
+  // Add random noise to point cloud (for robustness testing)
+  if (noise_std_cm>0) {
+    for (int i=0; i<mesh_cam_pts->width; ++i) {
+      // Generate a random unit vector. Sampled from unite ball
+      double vx = randn(randn_generator);
+      double vy = randn(randn_generator);
+      double vz = randn(randn_generator);
+      double  v = std::max(std::sqrt(vx*vx+vy*vy+vz*vz), 1e-10); // magnitude of the random vector
+      double  a = randn(randn_generator) * noise_std_cm * 0.01; // in centimeter
+      if (a<0) a = -a;
+      // Multiply the magnitude of the noise on the unit vector
+      vx = vx / v * a;
+      vy = vy / v * a;
+      vz = vz / v * a;
+      // Add the noise to point cloud
+      mesh_cam_pts->points[i].x += vx;
+      mesh_cam_pts->points[i].y += vy;
+      mesh_cam_pts->points[i].z += vz;
+    }
   }
 
   Eigen::Affine3d mesh2cloud(loadRegistration(argv[num_point_clouds+2]));
