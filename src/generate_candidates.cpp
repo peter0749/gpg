@@ -22,6 +22,12 @@
 
 const double PI = M_PI;
 const double PI_2 = M_PI*2;
+const double ROT_TH = 10.0;
+const double TRANS_TH = 0.02;
+
+// NMS th
+const double RAD_TH = ROT_TH * PI / 180.0;
+const Eigen::Matrix3d EYE_M = Eigen::Matrix3d::Identity();
 
 // function to read in a double array from a single line of a configuration file
 std::vector<double> stringToDouble(const std::string& str)
@@ -226,6 +232,7 @@ int main(int argc, char* argv[])
   for (int i=0; i<labels.size(); ++i) {
       Grasp single_grasp = candidates[i];
       Eigen::Matrix3d rot    = single_grasp.getFrame().cast<double>();
+      Eigen::Matrix3d rot_T  = rot.transpose();
       Eigen::Vector3d bottom = single_grasp.getGraspBottom().cast<double>();
       Eigen::Vector3d bottom_left  =  0.5 * rot.block<3,1>(0,1) * hand_outer_diameter + bottom;
       Eigen::Vector3d bottom_right = -0.5 * rot.block<3,1>(0,1) * hand_outer_diameter + bottom;
@@ -234,7 +241,22 @@ int main(int argc, char* argv[])
 
       bool b_good = (labels[i]==2) && (bottom_left(2)>0.01) && (bottom_right(2)>0.01) && (top_left(2)>0.01) && (top_right(2)>0.01);
       if (negative_sample) b_good = !b_good;
-      if (b_good) good_index.push_back(i); // good_grasps.push_back(candidates[i]);
+      if (b_good) {
+          // NMS here
+          bool matched = false;
+          for (auto j : good_index) {
+              Eigen::Vector3d bottom_j = candidates[j].getGraspBottom().cast<double>();
+              Eigen::Matrix3d rot_j    = candidates[j].getFrame().cast<double>();
+              double trans_diff = (bottom-bottom_j).norm();
+              double sin_diff = (EYE_M - rot_T * rot_j).norm() / (2.0*std::sqrt(2.0));
+              double rot_diff = std::asin(sin_diff);
+              if (trans_diff<TRANS_TH && rot_diff<RAD_TH) {
+                  matched = true;
+                  break;
+              }
+          }
+          if (not matched) good_index.push_back(i); // good_grasps.push_back(candidates[i]);
+      }
   }
   std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
   std::cout << "Evaluation => " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()*1e-6 << " seconds" << std::endl;
