@@ -110,6 +110,7 @@ int main(int argc, char* argv[])
   double friction_coeff = config_file.getValueOfKey<double>("friction_coeff", 20.0);
   int viable_thresh = config_file.getValueOfKey<int>("viable_thresh", 6);
   bool negative_sample = config_file.getValueOfKey<bool>("negative_sample", false);
+  bool remove_table = config_file.getValueOfKey<bool>("remove_table", false);
 
   std::cout << "finger_width: " << finger_width << "\n";
   std::cout << "hand_outer_diameter: " << hand_outer_diameter << "\n";
@@ -119,6 +120,7 @@ int main(int argc, char* argv[])
   std::cout << "friction_coeff: " << friction_coeff << "\n";
   std::cout << "viable_thresh: " << viable_thresh << "\n";
   std::cout << "negative_sample: " << negative_sample << "\n";
+  std::cout << "remove_table: " << remove_table << "\n";
 
   bool voxelize = config_file.getValueOfKey<bool>("voxelize", true);
   bool remove_outliers = config_file.getValueOfKey<bool>("remove_outliers", false);
@@ -222,7 +224,15 @@ int main(int argc, char* argv[])
   std::vector<int> labels = handsearch.reevaluateHypotheses(mesh_cam, candidates);
   std::vector<int> good_index;
   for (int i=0; i<labels.size(); ++i) {
-      bool b_good = (labels[i]==2);
+      Grasp single_grasp = candidates[i];
+      Eigen::Matrix3d rot    = single_grasp.getFrame().cast<double>();
+      Eigen::Vector3d bottom = single_grasp.getGraspBottom().cast<double>();
+      Eigen::Vector3d bottom_left  =  0.5 * rot.block<3,1>(0,1) * hand_outer_diameter + bottom;
+      Eigen::Vector3d bottom_right = -0.5 * rot.block<3,1>(0,1) * hand_outer_diameter + bottom;
+      Eigen::Vector3d top_left     = rot.block<3,1>(0,0) * hand_depth + bottom_left;
+      Eigen::Vector3d top_right    = rot.block<3,1>(0,0) * hand_depth + bottom_right;
+
+      bool b_good = (labels[i]==2) && (bottom_left(2)>0.01) && (bottom_right(2)>0.01) && (top_left(2)>0.01) && (top_right(2)>0.01);
       if (negative_sample) b_good = !b_good;
       if (b_good) good_index.push_back(i); // good_grasps.push_back(candidates[i]);
   }
