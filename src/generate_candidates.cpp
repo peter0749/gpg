@@ -22,8 +22,8 @@
 
 const double PI = M_PI;
 const double PI_2 = M_PI*2;
-const double ROT_TH = 10.0;
-const double TRANS_TH = 0.02;
+const double ROT_TH = 5.0;
+const double TRANS_TH = 0.01;
 
 // NMS th
 const double RAD_TH = ROT_TH * PI / 180.0;
@@ -239,7 +239,7 @@ int main(int argc, char* argv[])
       Eigen::Vector3d top_left     = rot.block<3,1>(0,0) * hand_depth + bottom_left;
       Eigen::Vector3d top_right    = rot.block<3,1>(0,0) * hand_depth + bottom_right;
 
-      bool b_good = (labels[i]==2) && (bottom_left(2)>0.01) && (bottom_right(2)>0.01) && (top_left(2)>0.01) && (top_right(2)>0.01);
+      bool b_good = (labels[i]==2) && (bottom_left(2)>0) && (bottom_right(2)>0) && (top_left(2)>0) && (top_right(2)>0) && (rot(2,0)<0);
       if (negative_sample) b_good = !b_good;
       if (b_good) {
           // NMS here
