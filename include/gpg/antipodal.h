@@ -37,6 +37,7 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+#include <utility>
 
 #include <Eigen/Dense>
 
@@ -66,7 +67,7 @@ public:
    * \param vertical_axis the vertical direction of the robot hand
    * \return 0 if it's not antipodal, 1 if one finger is antipodal, 2 if the grasp is antipodal
    */
-  int evaluateGrasp(const PointList& point_list, double extremal_thresh, int lateral_axis = 0, int forward_axis = 1,
+  std::pair<int,int> evaluateGrasp(const PointList& point_list, double extremal_thresh, int lateral_axis = 0, int forward_axis = 1,
     int vertical_axis = 2) const;
 
   /**
@@ -75,7 +76,7 @@ public:
    * \param thresh_half the threshold to consider the grasp half-antipodal
    * \param thresh_full the threshold to conisder the grasp full-antipodal
    */
-  int evaluateGrasp(const Eigen::Matrix3Xd& normals, double thresh_half, double thresh_full) const;
+  std::pair<int,int> evaluateGrasp(const Eigen::Matrix3Xd& normals, double thresh_half, double thresh_full) const;
 
   static const int NO_GRASP; // normals point not toward any finger
   static const int HALF_GRASP; // normals point towards one finger

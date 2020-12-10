@@ -7,6 +7,7 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <utility>
 #include <chrono>
 #include <Eigen/Dense>
 #include <pcl/point_cloud.h>
@@ -227,9 +228,21 @@ int main(int argc, char* argv[])
   // Generate a list of grasp candidates.
   std::vector<Grasp> candidates = candidates_generator.generateGraspCandidates(mesh_cam);
   std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-  std::vector<int> labels = handsearch.reevaluateHypotheses(mesh_cam, candidates);
-  std::vector<int> good_index;
+  std::vector<std::pair<int,int> > labels = handsearch.reevaluateHypotheses(mesh_cam, candidates);
+  std::vector<std::pair<std::pair<int,int>, int> > labels_w_ind;
   for (int i=0; i<labels.size(); ++i) {
+      labels_w_ind.push_back(std::pair<std::pair<int,int>, int>(labels[i], i));
+  }
+  std::sort(labels_w_ind.begin(), labels_w_ind.end(), 
+          [](const auto &a, const auto &b) -> bool
+          { 
+              return a.first > b.first; 
+          }
+          );
+  std::vector<int> good_index;
+  for (auto ind : labels_w_ind) {
+      int i = ind.second;
+      auto label = ind.first;
       Grasp single_grasp = candidates[i];
       Eigen::Matrix3d rot    = single_grasp.getFrame().cast<double>();
       Eigen::Matrix3d rot_T  = rot.transpose();
@@ -239,9 +252,10 @@ int main(int argc, char* argv[])
       Eigen::Vector3d top_left     = rot.block<3,1>(0,0) * hand_depth + bottom_left;
       Eigen::Vector3d top_right    = rot.block<3,1>(0,0) * hand_depth + bottom_right;
 
-      bool b_good = (labels[i]==2) && (bottom_left(2)>0) && (bottom_right(2)>0) && (top_left(2)>0) && (top_right(2)>0) && (rot(2,0)<0);
+      bool b_good = (label.second==2) && (bottom_left(2)>0) && (bottom_right(2)>0) && (top_left(2)>0) && (top_right(2)>0) && (rot(2,0)<0);
       if (negative_sample) b_good = !b_good;
       if (b_good) {
+          std::cout << label.first << std::endl;
           // NMS here
           bool matched = false;
           for (auto j : good_index) {

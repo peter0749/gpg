@@ -1,4 +1,5 @@
 #include <gpg/hand_search.h>
+#include <utility>
 
 
 const int HandSearch::ROTATION_AXIS_NORMAL = 0;
@@ -83,7 +84,7 @@ std::vector<GraspSet> HandSearch::searchHands(const CloudCamera& cloud_cam, bool
 }
 
 
-std::vector<int> HandSearch::reevaluateHypotheses(const CloudCamera& cloud_cam, std::vector<Grasp>& grasps,
+std::vector<std::pair<int,int> > HandSearch::reevaluateHypotheses(const CloudCamera& cloud_cam, std::vector<Grasp>& grasps,
   bool plot_samples) const
 {
   // create KdTree for neighborhood search
@@ -107,7 +108,7 @@ std::vector<int> HandSearch::reevaluateHypotheses(const CloudCamera& cloud_cam, 
 
   Eigen::Matrix3Xd points = cloud->getMatrixXfMap().block(0, 0, 3, cloud->size()).cast<double>();
   PointList point_list(points, cloud_normals, camera_source, cloud_cam.getViewPoints());
-  std::vector<int> labels(grasps.size()); // -1: not feasible, 0: feasible, >0: see Antipodal class
+  std::vector<std::pair<int,int> > labels(grasps.size()); // -1: not feasible, 0: feasible, >0: see Antipodal class
 
 #ifdef _OPENMP // parallelization using OpenMP
 #pragma omp parallel for num_threads(params_.num_threads_)
@@ -117,7 +118,7 @@ std::vector<int> HandSearch::reevaluateHypotheses(const CloudCamera& cloud_cam, 
     std::vector<int> nn_indices;
     std::vector<float> nn_dists;
     PointList nn_points;
-    labels[i] = 0;
+    labels[i] = {0,0};
     pcl::PointXYZRGBA sample = eigenVectorToPcl(grasps[i].getSample());
 
     if (kdtree.radiusSearch(sample, nn_radius_, nn_indices, nn_dists) > 0)
@@ -139,24 +140,12 @@ std::vector<int> HandSearch::reevaluateHypotheses(const CloudCamera& cloud_cam, 
       {
         // label the grasp
         labels[i] = labelHypothesis(nn_points_frame, finger_hand);
-        bool is_grasp = labels[i] == Antipodal::FULL_GRASP || labels[i] == Antipodal::HALF_GRASP;
+        bool is_grasp = labels[i].second == Antipodal::FULL_GRASP || labels[i].second == Antipodal::HALF_GRASP;
         grasps[i].setHalfAntipodal(is_grasp);
-        grasps[i].setFullAntipodal(labels[i] == Antipodal::FULL_GRASP);
+        grasps[i].setFullAntipodal(labels[i].second == Antipodal::FULL_GRASP);
       }
     }
   }
-
-  /*
-  // remove empty list elements
-  std::vector<Grasp> grasps_out;
-  for (std::size_t i = 0; i < labels.size(); i++)
-  {
-    grasps_out.push_back(grasps[i]);
-    bool is_half_grasp = labels[i] == Antipodal::FULL_GRASP || labels[i] == Antipodal::HALF_GRASP;
-    grasps_out[grasps_out.size()-1].setHalfAntipodal(is_half_grasp);
-    grasps_out[grasps_out.size()-1].setFullAntipodal(labels[i] == Antipodal::FULL_GRASP);
-  }
-  */
 
   return labels;
 }
@@ -253,12 +242,12 @@ bool HandSearch::reevaluateHypothesis(const PointList& point_list, const Grasp& 
 }
 
 
-int HandSearch::labelHypothesis(const PointList& point_list, FingerHand& finger_hand) const
+std::pair<int,int> HandSearch::labelHypothesis(const PointList& point_list, FingerHand& finger_hand) const
 {
   std::vector<int> indices_learning = finger_hand.computePointsInClosingRegion(point_list.getPoints());
   if (indices_learning.size() == 0)
   {
-    return Antipodal::NO_GRASP;
+    return std::make_pair(0,Antipodal::NO_GRASP);
   }
 
   // extract data for classification
@@ -266,7 +255,7 @@ int HandSearch::labelHypothesis(const PointList& point_list, FingerHand& finger_
 
   // evaluate if the grasp is antipodal
   Antipodal antipodal(params_.friction_coeff_, params_.viable_thresh_);
-  int antipodal_result = antipodal.evaluateGrasp(point_list_learning, 0.2, finger_hand.getLateralAxis(),
+  std::pair<int,int> antipodal_result = antipodal.evaluateGrasp(point_list_learning, 0.2, finger_hand.getLateralAxis(),
     finger_hand.getForwardAxis(), params_.rotation_axis_);
 
   return antipodal_result;

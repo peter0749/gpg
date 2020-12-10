@@ -167,7 +167,7 @@ std::vector<GraspSet> CandidatesGenerator::generateGraspCandidateSets(const Clou
 }
 
 
-std::vector<int> CandidatesGenerator::reevaluateHypotheses(const CloudCamera& cloud_cam,
+std::vector<std::pair<int,int> > CandidatesGenerator::reevaluateHypotheses(const CloudCamera& cloud_cam,
   std::vector<Grasp>& grasps)
 {
   return hand_search_->reevaluateHypotheses(cloud_cam, grasps);

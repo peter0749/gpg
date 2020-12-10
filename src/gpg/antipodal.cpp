@@ -8,7 +8,7 @@ Antipodal::Antipodal(double friction_coeff, int viable_thresh) : friction_coeff_
     // Nothing to do
 }
 
-int Antipodal::evaluateGrasp(const PointList& point_list, double extremal_thresh, int lateral_axis, int forward_axis,
+std::pair<int,int> Antipodal::evaluateGrasp(const PointList& point_list, double extremal_thresh, int lateral_axis, int forward_axis,
   int vertical_axis) const
 {
   
@@ -18,7 +18,7 @@ int Antipodal::evaluateGrasp(const PointList& point_list, double extremal_thresh
   const double &friction_coeff = this->friction_coeff_;
   const int &viable_thresh = this->viable_thresh_;
 
-  int result = NO_GRASP;
+  std::pair<int,int> result = std::make_pair(0,NO_GRASP);
 
   const Eigen::Matrix3Xd& pts = point_list.getPoints();
   const Eigen::Matrix3Xd& normals = point_list.getNormals();
@@ -54,10 +54,8 @@ int Antipodal::evaluateGrasp(const PointList& point_list, double extremal_thresh
       right_idx_viable.push_back(i);
   }
 
-//  std::cout << "left_idx_viable: " << left_idx_viable.size() << ", right_idx_viable: " << right_idx_viable.size() << "\n";
-
   if (left_idx_viable.size() > 0 || right_idx_viable.size() > 0)
-    result = HALF_GRASP;
+    result = std::make_pair(std::min(left_idx_viable.size(), right_idx_viable.size()), HALF_GRASP);
 
   if (left_idx_viable.size() > 0 && right_idx_viable.size() > 0)
   {
@@ -97,21 +95,17 @@ int Antipodal::evaluateGrasp(const PointList& point_list, double extremal_thresh
         num_viable_right++;
     }
 
-//    std::cout << "num_viable_left: " << num_viable_left << ", num_viable_right: " << num_viable_right << "\n";
-
     if (num_viable_left >= viable_thresh && num_viable_right >= viable_thresh)
     {
-      result = FULL_GRASP;
+      result = std::make_pair(std::min(num_viable_left, num_viable_right), FULL_GRASP);
     }
   }
-
-//  std::cout << "result: " << result << "\n";
 
   return result;
 }
 
 
-int Antipodal::evaluateGrasp(const Eigen::Matrix3Xd& normals, double thresh_half, double thresh_full) const
+std::pair<int,int> Antipodal::evaluateGrasp(const Eigen::Matrix3Xd& normals, double thresh_half, double thresh_full) const
 {
   int num_thresh = 6;
   int grasp = 0;
@@ -177,9 +171,9 @@ int Antipodal::evaluateGrasp(const Eigen::Matrix3Xd& normals, double thresh_half
   }
 
   if (is_full_grasp)
-    return FULL_GRASP;
+    return std::make_pair(std::min(numr, numl), FULL_GRASP);
   else if (is_half_grasp)
-    return HALF_GRASP;
+    return std::make_pair(std::min(numr, numl), HALF_GRASP);
 
-  return NO_GRASP;
+  return std::make_pair(std::min(numr, numl), NO_GRASP);
 }

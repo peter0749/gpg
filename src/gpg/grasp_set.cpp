@@ -244,10 +244,10 @@ void GraspSet::labelHypothesis(const PointList& point_list, const FingerHand& fi
 const
 {
   Antipodal antipodal(friction_coeff_, viable_thresh_);
-  int label = antipodal.evaluateGrasp(point_list, 0.2, finger_hand.getLateralAxis(), finger_hand.getForwardAxis(),
+  std::pair<int,int> label = antipodal.evaluateGrasp(point_list, 0.2, finger_hand.getLateralAxis(), finger_hand.getForwardAxis(),
     rotation_axis_);
-  hand.setHalfAntipodal(label == Antipodal::HALF_GRASP || label == Antipodal::FULL_GRASP);
-  hand.setFullAntipodal(label == Antipodal::FULL_GRASP);
+  hand.setHalfAntipodal(label.second == Antipodal::HALF_GRASP || label.second == Antipodal::FULL_GRASP);
+  hand.setFullAntipodal(label.second == Antipodal::FULL_GRASP);
 }
 
 

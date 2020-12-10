@@ -53,6 +53,8 @@
 #include <gpg/plot.h>
 #include <gpg/point_list.h>
 
+#include <utility>
+
 
 typedef pcl::PointCloud<pcl::PointXYZRGBA> PointCloudRGBA;
 
@@ -118,7 +120,7 @@ public:
    * \param grasps the list of grasp candidates
    * \param plots_samples if samples are visualized
    */
-  std::vector<int> reevaluateHypotheses(const CloudCamera& cloud_cam, std::vector<Grasp>& grasps,
+  std::vector<std::pair<int,int> > reevaluateHypotheses(const CloudCamera& cloud_cam, std::vector<Grasp>& grasps,
     bool plot_samples = false) const;
 
   const Parameters& getParams () const
@@ -164,7 +166,7 @@ private:
    * \param finger_hand the FingerHand object that describes a valid finger placement
    * \return the label
    */
-  int labelHypothesis(const PointList& point_list, FingerHand& finger_hand) const;
+  std::pair<int,int> labelHypothesis(const PointList& point_list, FingerHand& finger_hand) const;
 
   /**
    * \brief Convert an Eigen::Vector3d object to a pcl::PointXYZRGBA.

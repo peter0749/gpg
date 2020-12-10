@@ -119,7 +119,7 @@ class CandidatesGenerator
      * \param grasps the grasps to evaluate
      * \return the reevaluated grasps
      */
-    std::vector<int> reevaluateHypotheses(const CloudCamera& cloud_cam, std::vector<Grasp>& grasps);
+    std::vector<std::pair<int,int> > reevaluateHypotheses(const CloudCamera& cloud_cam, std::vector<Grasp>& grasps);
 
     /**
      * \brief Set the number of samples.
