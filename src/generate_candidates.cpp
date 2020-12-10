@@ -255,7 +255,6 @@ int main(int argc, char* argv[])
       bool b_good = (label.second==2) && (bottom_left(2)>0) && (bottom_right(2)>0) && (top_left(2)>0) && (top_right(2)>0) && (rot(2,0)<0);
       if (negative_sample) b_good = !b_good;
       if (b_good) {
-          std::cout << label.first << std::endl;
           // NMS here
           bool matched = false;
           for (auto j : good_index) {
