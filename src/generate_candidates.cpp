@@ -278,7 +278,6 @@ int main(int argc, char* argv[])
 
   if (plot_grasps) {
       std::vector<Grasp> good_grasps;
-      std::random_shuffle(good_index.begin(), good_index.end());
       
       for (int i=0; i<std::min(max_samples, (int)good_index.size()); ++i) {
           good_grasps.push_back(candidates[good_index[i]]);
